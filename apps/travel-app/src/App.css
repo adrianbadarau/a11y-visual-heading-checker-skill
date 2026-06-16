@@ -22,11 +22,12 @@ body {
   margin-bottom: 3rem;
 }
 /* Pseudo-heading style for "Popular Getaways" */
-.pseudo-h2 {
+._a8b9c {
   display: block;
   font-size: 2rem;
   font-weight: 700;
   color: #f8fafc;
+  margin-top: 0;
   margin-bottom: 1.5rem;
 }
 .grid {
@@ -41,10 +42,11 @@ body {
   padding: 1.5rem;
 }
 /* Pseudo-heading style for card titles */
-.pseudo-h3 {
+._x1y2z {
   font-size: 1.25rem;
   font-weight: 600;
   color: #10b981;
+  margin-top: 0;
   margin-bottom: 0.75rem;
 }
 .card p {
@@ -60,11 +62,12 @@ body {
   text-align: center;
 }
 /* Pseudo-heading style for newsletter form */
-.pseudo-form-title {
+._m5n6o {
   display: block;
   font-size: 1.5rem;
   font-weight: 700;
   color: #f8fafc;
+  margin-top: 0;
   margin-bottom: 1rem;
   text-transform: uppercase;
 }
