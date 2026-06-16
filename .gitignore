@@ -3,3 +3,4 @@ dist
 .system_generated
 *.log
 .DS_Store
+artifacts

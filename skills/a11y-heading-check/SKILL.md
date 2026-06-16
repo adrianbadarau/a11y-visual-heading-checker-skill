@@ -9,6 +9,10 @@ Use this skill to audit web pages for WCAG 1.3.1 (Info and Relationships) violat
 
 ## Prerequisites
 * Ensure the target web application dev server is running.
+* Install the Playwright browser binaries by running:
+  ```bash
+  npx playwright install chromium
+  ```
 * Verify your model configuration supports vision/multimodal input. If not, request the user to change models.
 
 ## Audit Workflow

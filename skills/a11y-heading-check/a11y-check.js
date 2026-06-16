@@ -1,59 +1,84 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 const targetUrl = process.argv[2] || 'http://localhost:5173';
-const ARTIFACT_DIR = path.resolve(process.cwd(), 'artifacts');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ARTIFACT_DIR = path.resolve(__dirname, '../../artifacts');
 
 if (!fs.existsSync(ARTIFACT_DIR)) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true });
 }
 
 (async () => {
-  console.log(`Launching browser and navigating to ${targetUrl}...`);
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto(targetUrl, { waitUntil: 'networkidle' });
+  let browser;
+  try {
+    console.log(`Launching browser and navigating to ${targetUrl}...`);
+    browser = await chromium.launch();
+    const page = await browser.newPage();
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(targetUrl, { waitUntil: 'networkidle' });
 
-  console.log('Evaluating elements in page...');
-  const candidates = await page.evaluate(() => {
-    const excludedTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'NAV', 'FOOTER', 'BUTTON', 'A', 'SCRIPT', 'STYLE', 'SVG', 'INPUT', 'LABEL'];
-    const allElements = document.querySelectorAll('*');
-    const list = [];
-    let candidateCount = 0;
+    console.log('Evaluating elements in page...');
+    const candidates = await page.evaluate(() => {
+      const excludedTags = ['H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HEADER', 'NAV', 'FOOTER', 'BUTTON', 'A', 'SCRIPT', 'STYLE', 'SVG', 'INPUT', 'LABEL'];
+      const allElements = document.querySelectorAll('*');
+      const candidateElements = [];
 
-    for (const el of allElements) {
-      if (excludedTags.includes(el.tagName)) continue;
-      if (el.role === 'heading' || el.getAttribute('role') === 'heading') continue;
+      for (const el of allElements) {
+        if (excludedTags.includes(el.tagName)) continue;
+        if (el.role === 'heading' || el.getAttribute('role') === 'heading') continue;
 
-      // Ensure element contains direct visible text and is not empty
-      const text = (el.innerText || '').trim();
-      if (!text) continue;
-      
-      // Skip if this text is identical to a child's text to prevent double-selecting containers
-      let hasMatchingChild = false;
-      for (let i = 0; i < el.children.length; i++) {
-        if ((el.children[i].innerText || '').trim() === text) {
-          hasMatchingChild = true;
-          break;
+        // Ensure element contains direct visible text and is not empty
+        const text = (el.innerText || '').trim();
+        if (!text) continue;
+
+        // Verify element has physical layout
+        const rect = el.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) continue;
+        
+        // Skip if this text is identical to a child's text to prevent double-selecting containers
+        let hasMatchingChild = false;
+        for (let i = 0; i < el.children.length; i++) {
+          if ((el.children[i].innerText || '').trim() === text) {
+            hasMatchingChild = true;
+            break;
+          }
+        }
+        if (hasMatchingChild) continue;
+
+        const style = window.getComputedStyle(el);
+        const fontSizeVal = parseFloat(style.fontSize);
+        const fontWeightVal = parseInt(style.fontWeight, 10);
+        const textTransform = style.textTransform;
+
+        const isHeadingSize = fontSizeVal >= 18;
+        const isHeadingWeight = fontWeightVal >= 600;
+        const isHeadingCase = textTransform === 'uppercase' && text.length > 5 && text.length < 50;
+        const isHardcodedUppercase = text === text.toUpperCase() && text.length > 5 && text.length < 50;
+
+        if (isHeadingSize || isHeadingWeight || isHeadingCase || isHardcodedUppercase) {
+          candidateElements.push(el);
         }
       }
-      if (hasMatchingChild) continue;
 
-      const style = window.getComputedStyle(el);
-      const fontSizeVal = parseFloat(style.fontSize);
-      const fontWeightVal = parseInt(style.fontWeight, 10);
-      const textTransform = style.textTransform;
+      // Avoid flagging parent containers if a child is already selected
+      const filteredCandidates = [];
+      for (let i = 0; i < candidateElements.length; i++) {
+        const el = candidateElements[i];
+        const hasDescendantCandidate = candidateElements.some((otherEl, otherIdx) => {
+          return i !== otherIdx && el.contains(otherEl);
+        });
+        if (!hasDescendantCandidate) {
+          filteredCandidates.push(el);
+        }
+      }
 
-      const isHeadingSize = fontSizeVal >= 18;
-      const isHeadingWeight = fontWeightVal >= 600;
-      const isHeadingCase = textTransform === 'uppercase' && text.length > 5 && text.length < 50;
-
-      if (isHeadingSize || isHeadingWeight || isHeadingCase) {
+      const list = [];
+      let candidateCount = 0;
+      for (const el of filteredCandidates) {
         candidateCount++;
-        
-        // Store original outer HTML for metadata
         const originalHtml = el.outerHTML;
 
         // Annotate style
@@ -84,25 +109,30 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
         list.push({
           candidateId: candidateCount,
           tagName: el.tagName.toLowerCase(),
-          text: text.substring(0, 80),
+          text: (el.innerText || '').trim().substring(0, 80),
           htmlSnippet: originalHtml.substring(0, 250)
         });
       }
+      return list;
+    });
+
+    console.log(`Found ${candidates.length} visual heading candidates.`);
+    
+    // Save annotated screenshot and JSON data
+    const screenshotPath = path.join(ARTIFACT_DIR, 'a11y-screenshot.png');
+    const jsonPath = path.join(ARTIFACT_DIR, 'a11y-candidates.json');
+
+    await page.screenshot({ path: screenshotPath, fullPage: true });
+    fs.writeFileSync(jsonPath, JSON.stringify(candidates, null, 2));
+
+    console.log(`Screenshot saved to: ${screenshotPath}`);
+    console.log(`Candidates JSON saved to: ${jsonPath}`);
+  } catch (error) {
+    console.error(`Error running accessibility check: ${error.message || error}`);
+    process.exitCode = 1;
+  } finally {
+    if (browser) {
+      await browser.close();
     }
-    return list;
-  });
-
-  console.log(`Found ${candidates.length} visual heading candidates.`);
-  
-  // Save annotated screenshot and JSON data
-  const screenshotPath = path.join(ARTIFACT_DIR, 'a11y-screenshot.png');
-  const jsonPath = path.join(ARTIFACT_DIR, 'a11y-candidates.json');
-
-  await page.screenshot({ path: screenshotPath, fullPage: true });
-  fs.writeFileSync(jsonPath, JSON.stringify(candidates, null, 2));
-
-  console.log(`Screenshot saved to: ${screenshotPath}`);
-  console.log(`Candidates JSON saved to: ${jsonPath}`);
-
-  await browser.close();
+  }
 })();
