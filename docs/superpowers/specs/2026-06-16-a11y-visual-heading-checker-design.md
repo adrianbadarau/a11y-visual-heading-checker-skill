@@ -15,18 +15,40 @@ This project will create:
 
 ---
 
-## 2. System Architecture
+## 2. Directory & Repository Structure
+
+To support scaling this repository with more skills and app testbeds in the future, the codebase is structured to isolate skills from target applications:
+
+```
+a11y-skills/
+├── apps/
+│   └── travel-app/                 # React/Vite dummy travel app
+│       ├── src/
+│       ├── package.json
+│       └── ...
+├── skills/
+│   └── a11y-heading-check/         # Folder for the visual heading checker skill
+│       ├── a11y-check.js           # Candidate marking script
+│       ├── SKILL.md                # AI agent instruction document
+│       └── package.json            # Node.js dependencies (Playwright, etc.)
+└── docs/
+    └── superpowers/specs/          # Design specifications
+```
+
+---
+
+## 3. System Architecture
 
 ```mermaid
 graph TD
-    subgraph Travel App (React/Vite)
+    subgraph apps/travel-app (React/Vite)
         App[Wanderlust Destinations]
         V1[Pseudo-heading: span]
         V2[Pseudo-heading: div]
         V3[Pseudo-heading: span]
     end
 
-    subgraph Automation & Inspection
+    subgraph skills/a11y-heading-check
         Script[a11y-check.js]
         Browser[Playwright Chromium]
         Artifacts[artifacts/ directory]
@@ -50,9 +72,10 @@ graph TD
 
 ---
 
-## 3. Component Details
+## 4. Component Details
 
-### 3.1. Dummy Travel App ("Wanderlust Destinations")
+### 4.1. Dummy Travel App ("Wanderlust Destinations")
+* **Location**: `apps/travel-app/`
 * **Stack**: React, Vite, CSS.
 * **Layout**: A premium landing page containing:
   - Hero banner.
@@ -64,9 +87,9 @@ graph TD
   - Destination card titles: `<div class="card-title">Explore Kyoto</div>` (bold, styled).
   - Newsletter title: `<span class="form-title">Join Our Mailing List</span>` (bold, styled).
 
-### 3.2. Visual Checker Script (`scripts/a11y-check.js`)
-* **Stack**: Node.js, Playwright.
-* **Execution**: `node scripts/a11y-check.js <url>`
+### 4.2. Visual Checker Script (`skills/a11y-heading-check/a11y-check.js`)
+* **Location**: `skills/a11y-heading-check/a11y-check.js`
+* **Execution**: `node skills/a11y-heading-check/a11y-check.js <url>`
 * **Logic**:
   1. Launches Chromium headless browser.
   2. Navigates to the page and waits for load.
@@ -87,7 +110,7 @@ graph TD
      - `htmlSnippet`
   7. Outputs result paths.
 
-### 3.3. Skill Documentation (`skills/a11y-heading-check/SKILL.md`)
+### 4.3. Skill Documentation (`skills/a11y-heading-check/SKILL.md`)
 * **Role**: Teaches coding agents to perform the audit.
 * **Steps**:
   1. Validate that the current model has vision/multimodal capabilities (raise warning to user if not).
@@ -104,11 +127,11 @@ graph TD
 
 ---
 
-## 4. Verification Plan
+## 5. Verification Plan
 
 ### Manual Verification
 1. Run the React app.
-2. Run `node scripts/a11y-check.js http://localhost:5173`.
+2. Run `node skills/a11y-heading-check/a11y-check.js http://localhost:5173`.
 3. Check generated `artifacts/a11y-screenshot.png` to confirm candidate borders are correctly overlaid.
 4. Verify the agent successfully parses the screenshot, edits the files, and re-runs the tool.
 5. Confirm the final check has `0` violations.
