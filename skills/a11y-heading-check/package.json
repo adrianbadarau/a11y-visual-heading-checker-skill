@@ -1,0 +1,12 @@
+{
+  "name": "a11y-heading-check",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node a11y-check.js"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
+  }
+}
