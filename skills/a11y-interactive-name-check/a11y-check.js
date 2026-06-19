@@ -41,7 +41,10 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
         } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
           // Look for associated label text
           let labelText = '';
-          if (el.id) {
+          if (el.labels && el.labels.length > 0) {
+            labelText = Array.from(el.labels).map(l => l.innerText || '').join(' ');
+          }
+          if (!labelText && el.id) {
             const labels = document.querySelectorAll(`label[for="${el.id}"]`);
             if (labels.length > 0) {
               labelText = Array.from(labels).map(l => l.innerText || '').join(' ');
@@ -74,7 +77,7 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
           const ids = labelledBy.split(/\s+/);
           const labels = ids.map(id => {
             const labelEl = document.getElementById(id);
-            return labelEl ? (labelEl.innerText || '').trim() : '';
+            return labelEl ? (labelEl.innerText || labelEl.textContent || '').trim() : '';
           }).filter(Boolean);
           progName = labels.join(' ');
         }
@@ -83,22 +86,25 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
         }
         progName = progName.trim();
 
-        // If it is completely unlabeled, we skip it (per user instructions to focus on overrides and generic names)
-        if (!progName) continue;
+        const computedName = progName || visualText;
+        if (!computedName) continue;
 
         // Heuristic A: Mismatch (WCAG 2.5.3)
-        // If programmatic name is present and visual text is present, programmatic name must contain visual text
-        const clean = str => str.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanVisual = clean(visualText);
-        const cleanProg = clean(progName);
-
+        // Perform the mismatch check ONLY if both progName and visualText are present
         let isMismatch = false;
-        if (cleanVisual && cleanProg) {
+        if (progName && visualText) {
+          const clean = str => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const cleanVisual = clean(visualText);
+          const cleanProg = clean(progName);
           isMismatch = !cleanProg.includes(cleanVisual);
         }
 
         // Heuristic B: Generic label (WCAG 2.4.6)
-        const isGeneric = genericWords.includes(progName.toLowerCase());
+        // Clean the computedName (remove punctuation/spaces) and compare against cleaned versions of genericWords
+        const cleanForGeneric = str => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanedComputed = cleanForGeneric(computedName);
+        const cleanedGenericWords = genericWords.map(word => cleanForGeneric(word));
+        const isGeneric = cleanedGenericWords.includes(cleanedComputed);
 
         if (isMismatch || isGeneric) {
           candidateElements.push({
