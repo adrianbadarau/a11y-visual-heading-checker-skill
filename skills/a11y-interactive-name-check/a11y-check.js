@@ -30,7 +30,7 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
       for (const el of allInteractive) {
         // Skip non-visible/zero-size elements
         const rect = el.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0) continue;
+        if (rect.width <= 4 || rect.height <= 4) continue;
         const style = window.getComputedStyle(el);
         if (style.display === 'none' || style.visibility === 'hidden') continue;
 
@@ -71,15 +71,18 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
         visualText = visualText.trim();
 
         // 2. Get programmatic name
-        let progName = el.getAttribute('aria-label') || '';
+        let progName = '';
         const labelledBy = el.getAttribute('aria-labelledby');
-        if (!progName && labelledBy) {
+        if (labelledBy) {
           const ids = labelledBy.split(/\s+/);
           const labels = ids.map(id => {
             const labelEl = document.getElementById(id);
             return labelEl ? (labelEl.innerText || labelEl.textContent || '').trim() : '';
           }).filter(Boolean);
           progName = labels.join(' ');
+        }
+        if (!progName) {
+          progName = el.getAttribute('aria-label') || '';
         }
         if (!progName) {
           progName = el.getAttribute('title') || '';
@@ -93,7 +96,11 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
         // Perform the mismatch check ONLY if both progName and visualText are present
         let isMismatch = false;
         if (progName && visualText) {
-          const clean = str => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const clean = str => str
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^\p{L}\p{N}]/gu, '');
           const cleanVisual = clean(visualText);
           const cleanProg = clean(progName);
           isMismatch = !cleanProg.includes(cleanVisual);

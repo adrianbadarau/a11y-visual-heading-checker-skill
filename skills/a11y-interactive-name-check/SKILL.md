@@ -10,6 +10,10 @@ Use this skill to audit web pages for WCAG 2.4.6 (Headings and Labels) and WCAG 
 ## Prerequisites
 * Ensure the target web application dev server is running.
 * Verify your model configuration supports vision/multimodal input. If not, request the user to change models.
+* Ensure Playwright's Chromium browser is installed. If the Chromium binary is missing, run:
+  ```bash
+  npx playwright install chromium
+  ```
 
 ## Audit Workflow
 
