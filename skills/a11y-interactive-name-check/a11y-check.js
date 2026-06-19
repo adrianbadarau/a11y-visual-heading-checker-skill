@@ -53,7 +53,7 @@ if (!fs.existsSync(ARTIFACT_DIR)) {
               labelText = parentLabel.innerText || '';
             }
           }
-          visualText = labelText || '';
+          visualText = labelText || el.getAttribute('placeholder') || '';
         } else {
           // Standard button/link/div text content
           visualText = el.innerText || '';
