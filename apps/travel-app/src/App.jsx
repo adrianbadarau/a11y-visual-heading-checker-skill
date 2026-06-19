@@ -5,6 +5,13 @@ export default function App() {
     <div className="container">
       {/* Correct semantic heading */}
       <header className="hero">
+        <div className="top-bar" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', padding: '10px' }}>
+          {/* VIOLATION: Mismatching label & generic word */}
+          <button aria-label="Selector" className="currency-select-btn">USD</button>
+          
+          {/* VIOLATION: Generic button label */}
+          <button aria-label="Button" className="search-btn">🔍</button>
+        </div>
         <h1>Wanderlust Destinations</h1>
         <p>Find your next adventure under the sun</p>
       </header>
@@ -17,6 +24,8 @@ export default function App() {
             {/* VIOLATION 2a: Card title using div */}
             <div className="_x1y2z">Explore Kyoto</div>
             <p>Experience Japan's historical heart with its magnificent temples, bamboo forests, and traditional tea ceremonies.</p>
+            {/* VIOLATION: Generic link label */}
+            <a href="#details" aria-label="Link" className="details-link">Learn More</a>
           </div>
           <div className="card">
             {/* VIOLATION 2b: Card title using div */}
