@@ -7,10 +7,10 @@ export default function App() {
       <header className="hero">
         <div className="top-bar" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', padding: '10px' }}>
           {/* VIOLATION: Mismatching label & generic word */}
-          <button aria-label="Selector" className="currency-select-btn">USD</button>
+          <button aria-label="Currency: USD" className="currency-select-btn">USD</button>
           
           {/* VIOLATION: Generic button label */}
-          <button aria-label="Button" className="search-btn">🔍</button>
+          <button aria-label="Search destinations" className="search-btn">🔍</button>
         </div>
         <h1>Wanderlust Destinations</h1>
         <p>Find your next adventure under the sun</p>
@@ -25,7 +25,7 @@ export default function App() {
             <h3 className="pseudo-h3">Explore Kyoto</h3>
             <p>Experience Japan's historical heart with its magnificent temples, bamboo forests, and traditional tea ceremonies.</p>
             {/* VIOLATION: Generic link label */}
-            <a href="#details" aria-label="Link" className="details-link">Learn More</a>
+            <a href="#details" aria-label="Learn more about Wanderlust Destinations" className="details-link">Learn More</a>
           </div>
           <div className="card">
             {/* VIOLATION 2b FIX: Changed div.pseudo-h3 to h3.pseudo-h3 */}
@@ -39,7 +39,7 @@ export default function App() {
       <div className="newsletter-section">
         <h2 className="pseudo-form-title">Join Our Mailing List</h2>
         <form onSubmit={(e) => e.preventDefault()}>
-          <input type="email" placeholder="Enter your email" aria-label="Email Address" />
+          <input type="email" placeholder="Enter your email" aria-label="Email Address: Enter your email" />
           <button type="submit">Subscribe</button>
         </form>
       </div>
